@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>คำนวณแคลอรี่และคาร์โบไฮเดรต</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background-color: #f9f9f9; }
+        h1 { color: #ff5733; }
+        .container { width: 90%; max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+        input, select, button { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 5px; }
+        button { background-color: #ff5733; color: white; cursor: pointer; }
+        button:hover { background-color: #e64a19; }
+        canvas { max-width: 100%; }
+    </style>
+</head>
+<body>
+
+<h1>🍎 คำนวณแคลอรี่และคาร์โบไฮเดรต 🥗</h1>
+<div class="container">
+    <h2>📝 กรอกข้อมูลส่วนตัว</h2>
+    <label>น้ำหนัก (kg): <input type="number" id="weight"></label>
+    <label>ส่วนสูง (cm): <input type="number" id="height"></label>
+    <label>อายุ (ปี): <input type="number" id="age"></label>
+    <label>เพศ: 
+        <select id="gender">
+            <option value="male">ชาย</option>
+            <option value="female">หญิง</option>
+        </select>
+    </label>
+    <label>ระดับการออกกำลังกาย:
+        <select id="activity">
+            <option value="1.2">ไม่ออกกำลังกาย</option>
+            <option value="1.375">1-3 ครั้ง/สัปดาห์</option>
+            <option value="1.55">3-5 ครั้ง/สัปดาห์</option>
+            <option value="1.725">6-7 ครั้ง/สัปดาห์</option>
+            <option value="1.9">ออกกำลังกายทุกวัน</option>
+        </select>
+    </label>
+    <button onclick="calculateNeeds()">คำนวณ</button>
+    <p id="result"></p>
+</div>
+
+<div class="container">
+    <h2>🍽️ บันทึกเมนูอาหาร</h2>
+    <label>เมนูอาหาร:
+        <select id="food">
+            <option value="ข้าว">ข้าว</option>
+            <option value="เส้น">เส้นทุกชนิด</option>
+            <option value="ขนมปัง">ขนมปัง</option>
+            <option value="ผลไม้">ผลไม้</option>
+            <option value="นม">นมสด</option>
+            <option value="ผัก">ผักสด</option>
+        </select>
+    </label>
+    <button onclick="addFood()">เพิ่มเมนู</button>
+    <ul id="foodList"></ul>
+</div>
+
+<div class="container">
+    <h2>📊 กราฟแสดงผล</h2>
+    <canvas id="caloriesChart"></canvas>
+    <canvas id="carbsChart"></canvas>
+</div>
+
+<div class="container">
+    <h2>📢 สรุปการกินวันนี้</h2>
+    <button onclick="summarize()">สรุป</button>
+    <p id="summary"></p>
+</div>
+
+<script>
+const foodData = {
+    "ข้าว": { calories: 80, carbs: 15 },
+    "เส้น": { calories: 100, carbs: 15 },
+    "ขนมปัง": { calories: 80, carbs: 15 },
+    "ผลไม้": { calories: 60, carbs: 15 },
+    "นม": { calories: 120, carbs: 12 },
+    "ผัก": { calories: 30, carbs: 5 }
+};
+
+let dailyCalories = 0, dailyCarbs = 0, totalCalories = 0, totalCarbs = 0;
+let calorieChart, carbChart;
+
+function calculateNeeds() {
+    let weight = parseFloat(document.getElementById("weight").value);
+    let height = parseFloat(document.getElementById("height").value);
+    let age = parseFloat(document.getElementById("age").value);
+    let gender = document.getElementById("gender").value;
+    let activity = parseFloat(document.getElementById("activity").value);
+    
+    if (!weight || !height || !age) {
+        alert("กรุณากรอกข้อมูลให้ครบถ้วน!");
+        return;
+    }
+
+    let BMR = (gender === "male") ? (10 * weight) + (6.25 * height) - (5 * age) + 5 :
+                                   (10 * weight) + (6.25 * height) - (5 * age) - 161;
+
+    dailyCalories = BMR * activity;
+    dailyCarbs = (dailyCalories * 0.5) / 4;
+
+    document.getElementById("result").innerText =🎯 ควรได้รับ: ${Math.round(dailyCalories)} kcal / ${Math.round(dailyCarbs)} g คาร์โบไฮเดรต`;
+    updateCharts();
+}
+
+function addFood() {
+    let food = document.getElementById("food").value;
+    let calories = foodData[food].calories;
+    let carbs = foodData[food].carbs;
+
+    totalCalories += calories;
+    totalCarbs += carbs;
+
+    document.getElementById("foodList").innerHTML += <li>${food} (${calories} kcal, ${carbs} g คาร์โบไฮเดรต)</li>;
+    updateCharts();
+}
+
+function updateCharts() {
+    if (calorieChart) calorieChart.destroy();
+    if (carbChart) carbChart.destroy();
+
+    calorieChart = new Chart(document.getElementById("caloriesChart"), {
+        type: 'doughnut',
+        data: { labels: ["กินไป", "เหลือ"], datasets: [{ data: [totalCalories, Math.max(0, dailyCalories - totalCalories)], backgroundColor: ["#FF5733", "#D3D3D3"] }] }
+    });
+    carbChart = new Chart(document.getElementById("carbsChart"), {
+        type: 'doughnut',
+        data: { labels: ["กินไป", "เหลือ"], datasets: [{ data: [totalCarbs, Math.max(0, dailyCarbs - totalCarbs)], backgroundColor: ["#33FF57", "#D3D3D3"] }] }
+    });
+}
+
+function summarize() {
+    let calPercent = (totalCalories / dailyCalories * 100).toFixed(1);
+    let carbPercent = (totalCarbs / dailyCarbs * 100).toFixed(1);
+    let advice = totalCalories < dailyCalories ? "ควรกินเพิ่ม!" : "ควรลดปริมาณอาหาร!";
+
+    document.getElementById("summary").innerText =🍽️ วันนี้กินไป: ${totalCalories} kcal (${calPercent}%) และ ${totalCarbs} g คาร์โบไฮเดรต (${carbPercent}%)\n💡 คำแนะนำ: ${advice}`;
+}
+</script>
+
+</body>
+</html>
